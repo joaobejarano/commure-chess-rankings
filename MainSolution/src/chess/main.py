@@ -7,11 +7,11 @@ from chess.services.chess_service import ChessService
 
 def main():
     # PART 1
-    # ChessService.print_top_50_classical_players()
+    ChessService.print_top_50_classical_players()
     
 
     # PART 2
-    # ChessService.print_last_30_day_rating_for_top_player()
+    ChessService.print_last_30_day_rating_for_top_player()
     
 
     # PART 3
