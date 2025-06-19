@@ -11,6 +11,7 @@ def main():
     
 
     # PART 2
+    ChessService.print_last_30_day_rating_for_top_player()
     
 
     # PART 3
