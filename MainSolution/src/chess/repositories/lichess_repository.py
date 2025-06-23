@@ -13,7 +13,8 @@ class LichessRepository:
         if response.status_code == 200:
             players = response.json()
             allTop50Users = players['users']
-            return [player['username'] for player in allTop50Users]
+            usernames = list({player['username'] for player in allTop50Users})
+            return usernames[:count]
         print(f"Error searching for players: {response.status_code}")
         return []
 

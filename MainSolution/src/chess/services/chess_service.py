@@ -24,19 +24,11 @@ class ChessService:
             return
 
         top_player = top_player[0] 
-        rating_history = LichessRepository.get_player_rating_history(top_player)
-        if not rating_history:
-            print(f"Unable to retrieve rating history for {top_player}.")
-            return
 
         today = datetime.today()
-        last_30_days_ratings = {}
+        last_30_days = [(today - timedelta(days=i)).strftime('%Y-%m-%d') for i in range(29, -1, -1)]
 
-        for record in rating_history:
-            year, month, day, rating = record
-            date = datetime(year, month + 1, day)  # Adjustment in the month index
-            if today - timedelta(days=30) <= date <= today:
-                last_30_days_ratings[date.strftime('%Y-%m-%d')] = rating
+        last_30_days_ratings = ChessService.get_last_30_days_ratings(top_player, last_30_days)
 
         print(f"{top_player}, {last_30_days_ratings}")
 
@@ -71,23 +63,30 @@ class ChessService:
     @staticmethod
     def get_last_30_days_ratings(username, last_30_days):
         """
-        Returns the rating history for the last 30 days for a player.
+        Returns a dictionary with date -> rating for the last 30 calendar days.
+        Fills missing days using the last known rating (backfilling).
         """
-        rating_history_of_player = LichessRepository.get_player_rating_history(username)
-        if not rating_history_of_player:
+        rating_history = LichessRepository.get_player_rating_history(username)
+        if not rating_history:
             return {}
 
-        last_30_days_ratings = {}
-        for record in rating_history_of_player:
-            year, month, day, rating = record
-            date = datetime(year, month + 1, day).strftime('%Y-%m-%d')
-            if date in last_30_days:
-                last_30_days_ratings[date] = rating
+        today = datetime.today()
+        last_30_days_set = set(last_30_days)
+        rating_map = {}
 
-        filled_ratings_the_last_30_days = {}
-        last_rating = None
-        for date in last_30_days:
-            if date in last_30_days_ratings:
-                last_rating = last_30_days_ratings[date]
-            filled_ratings_the_last_30_days[date] = last_rating if last_rating is not None else ""
-        return filled_ratings_the_last_30_days
+        # Convert points into {date: rating}
+        for year, month, day, rating in rating_history:
+            date = datetime(year, month + 1, day)
+            date_str = date.strftime('%Y-%m-%d')
+            if date_str in last_30_days_set:
+                rating_map[date_str] = rating
+
+        # Backfill using a stack
+        filled_ratings = {}
+        stack = []
+        for date_str in last_30_days:
+            if date_str in rating_map:
+                stack.append(rating_map[date_str])
+            filled_ratings[date_str] = stack[-1] if stack else ""
+
+        return filled_ratings
